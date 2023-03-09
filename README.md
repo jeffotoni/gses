@@ -2,6 +2,12 @@
 
 A package to send emails using AWS SES, a package to facilitate its abstraction using the SES GO SDK.
 
+In order for your email to be sent successfully using the aws sdk you need to have an email validated by SES (Verify This Email Address), console access can be done by clicking here https://console.aws.amazon.com/ses, it will Also need your Identity ARN.
+
+#### Verify This Email Address - SES Example
+![image](./identity-arn.png)
+
+
 We only need to configure your keys beforehand so that AWS SES works correctly.
 
 - export AWS_REGION="aws-region"
