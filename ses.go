@@ -36,21 +36,21 @@ type profile struct {
 }
 
 var (
-	AWS_REGIAO                 = os.Getenv("AWS_REGIAO")
-	AWS_IDENTITY               = os.Getenv("S3WF_AWS_IDENTITY")
-	S3WF_AWS_ACCESS_KEY_ID     = os.Getenv("S3WF_AWS_ACCESS_KEY_ID")
-	S3WF_AWS_SECRET_ACCESS_KEY = os.Getenv("S3WF_AWS_SECRET_ACCESS_KEY")
+	AWS_REGION            = os.Getenv("AWS_REGION")
+	AWS_IDENTITY          = os.Getenv("AWS_IDENTITY")
+	AWS_ACCESS_KEY_ID     = os.Getenv("AWS_ACCESS_KEY_ID")
+	AWS_SECRET_ACCESS_KEY = os.Getenv("AWS_SECRET_ACCESS_KEY")
 
 	AWS_FROM = ""
 	AWS_MSG  = ""
 )
 
 func init() {
-	if len(AWS_REGIAO) == 0 ||
+	if len(AWS_REGION) == 0 ||
 		len(AWS_IDENTITY) == 0 ||
-		len(S3WF_AWS_ACCESS_KEY_ID) == 0 ||
-		len(S3WF_AWS_SECRET_ACCESS_KEY) == 0 {
-		log.Println("Error need to export the environment variables: AWS_REGIAO, AWS_IDENTITY, S3WF_AWS_ACCESS_KEY_ID, S3WF_AWS_SECRET_ACCESS_KEY")
+		len(AWS_ACCESS_KEY_ID) == 0 ||
+		len(AWS_SECRET_ACCESS_KEY) == 0 {
+		log.Println("Error need to export the environment variables: AWS_REGION, AWS_IDENTITY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY")
 	}
 }
 
@@ -410,7 +410,7 @@ func (pf *profile) Send(paramses ...string) error {
 	}
 
 	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(S3WF_AWS_ACCESS_KEY_ID, S3WF_AWS_SECRET_ACCESS_KEY, ""),
+		Credentials: credentials.NewStaticCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, ""),
 		Region:      aws.String(pf.Region),
 	})
 	if err != nil {
@@ -436,7 +436,7 @@ func SendEmailSes(To, From, FromMsg, Titulo, MsgHTML string) bool {
 
 	S := AwsSesSetProfile(
 
-		AWS_REGIAO,
+		AWS_REGION,
 
 		AWS_IDENTITY,
 
