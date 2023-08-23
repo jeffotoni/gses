@@ -48,9 +48,9 @@ var (
 func init() {
 	if len(AWS_REGION) == 0 ||
 		len(AWS_IDENTITY) == 0 ||
-		len(AWS_ACCESS_KEY_ID) == 0 ||
-		len(AWS_SECRET_ACCESS_KEY) == 0 {
-		log.Println("Error need to export the environment variables: AWS_REGION, AWS_IDENTITY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY")
+		//len(AWS_ACCESS_KEY_ID) == 0 ||
+		//len(AWS_SECRET_ACCESS_KEY) == 0 {
+		log.Println("Error need to export the environment variables: AWS_REGION= AWS_IDENTITY= AWS_ACCESS_KEY_ID= AWS_SECRET_ACCESS_KEY=")
 	}
 }
 
@@ -409,10 +409,19 @@ func (pf *profile) Send(paramses ...string) error {
 		//SourceArn:        pf.SourceArn,
 	}
 
-	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, ""),
-		Region:      aws.String(pf.Region),
-	})
+	var sess *session.Session
+	var err error
+	if  len(AWS_ACCESS_KEY_ID)>0 && len(AWS_SECRET_ACCESS_KEY)>0 {
+		sess, err = session.NewSession(&aws.Config{
+			Credentials: credentials.NewStaticCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, ""),
+			Region:      aws.String(pf.Region),
+		})
+	} else {
+		sess, err = session.NewSession(&aws.Config{
+			Region:      aws.String(pf.Region),
+		})
+	}
+	
 	if err != nil {
 		return errors.New(Concat("Error Error creating session:", err.Error()))
 	}
