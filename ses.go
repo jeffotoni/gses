@@ -54,9 +54,7 @@ var (
 func init() {
 	if len(AWS_REGION) == 0 ||
 		len(AWS_IDENTITY) == 0 {
-		//len(AWS_ACCESS_KEY_ID) == 0 ||
-		//len(AWS_SECRET_ACCESS_KEY) == 0 {
-		log.Println("Error need to export the environment variables: AWS_REGION= AWS_IDENTITY= or AWS_ACCESS_KEY_ID= AWS_SECRET_ACCESS_KEY=")
+		log.Println("Error need to export the environment variables: AWS_REGION | AWS_IDENTITY | It's not mandatory => AWS_ACCESS_KEY_ID | AWS_SECRET_ACCESS_KEY")
 	}
 }
 

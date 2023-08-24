@@ -17,17 +17,17 @@ func TestSendEmail(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"send_1", args{"", "", "send email msg here", "test send email", "<h1>Body HTML here</h1>"}, true, false},
+		// export
+		// AWS_REGION= AWS_IDENTITY=
+		// AWS_ACCESS_KEY_ID= AWS_SECRET_ACCESS_KEY=
+		{"send_1", args{"<your-email>", "noreply@<your-email-from>", "send email msg here - é açentuação", "test send email - é açentuação", "<h1>Body HTML here</h1>"}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotOk, err := SendEmail(tt.args.To, tt.args.From, tt.args.FromMsg, tt.args.Titulo, tt.args.MsgHTML)
+			err := SendEmail(tt.args.To, tt.args.From, tt.args.FromMsg, tt.args.Titulo, tt.args.MsgHTML)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SendEmail() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("SendEmail() = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}
