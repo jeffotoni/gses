@@ -13,6 +13,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
+	fmts "github.com/jeffotoni/gconcat"
+
+	"unicode"
+
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 var timeout = time.Duration(2 * time.Second)
@@ -113,12 +119,12 @@ func AwsSesSetProfile(
 	//
 	// Identity ARN: arn:aws:ses:region-aws:xxxx:identity/yourmail@domain.com
 	//
-	IdentityARN := Concat("arn:aws:ses:", Region, ":", IdentityArn, ":identity/", From)
+	IdentityARN := fmts.Concat("arn:aws:ses:", Region, ":", IdentityArn, ":identity/", From)
 
 	//
 	//
 	//
-	FromX := Concat(Info, " <", From, ">")
+	FromX := fmts.ConcatStr(Info, " <", From, ">")
 
 	//
 	//
@@ -423,13 +429,13 @@ func (pf *profile) Send(paramses ...string) error {
 	}
 
 	if err != nil {
-		return errors.New(Concat("Error Error creating session:", err.Error()))
+		return errors.New(fmts.ConcatStr("Error Error creating session:", err.Error()))
 	}
 
 	svc := ses.New(sess)
 	_, err = svc.SendEmail(params)
 	if err != nil {
-		return errors.New(Concat("error aws sendEmail:", err.Error()))
+		return errors.New(fmts.ConcatStr("error aws sendEmail:", err.Error()))
 
 	}
 	return nil
@@ -437,6 +443,14 @@ func (pf *profile) Send(paramses ...string) error {
 
 // SendEmailSes ..
 func SendEmailSes(To, From, FromMsg, Titulo, MsgHTML string) bool {
+
+	To = strings.TrimSpace(To)
+	From = strings.TrimSpace(From)
+	FromMsg = strings.TrimSpace(FromMsg)
+	Titulo = strings.TrimSpace(Titulo)
+
+	FromMsg = removeAccents(FromMsg)
+	Titulo = removeAccents(Titulo)
 
 	//
 	//
@@ -474,4 +488,14 @@ func SendEmailSes(To, From, FromMsg, Titulo, MsgHTML string) bool {
 
 func dialTimeout(network, addr string) (net.Conn, error) {
 	return net.DialTimeout(network, addr, timeout)
+}
+
+func removeAccents(s string) string {
+	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
+	result, _, _ := transform.String(t, s)
+	return result
+}
+
+func isMn(r rune) bool {
+	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
 }
