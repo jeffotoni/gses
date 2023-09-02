@@ -11,7 +11,7 @@ type Config struct {
 	AWS_SECRET_ACCESS_KEY string `json:"AWS_SECRET_ACCESS_KEY,omitempty"`
 }
 
-func New(AWS_REGION, AWS_IDENTITY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_FROM, AWS_MSG string) *Config {
+func New(AWS_REGION, AWS_IDENTITY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY string) *Config {
 	return &Config{
 		AWS_REGION:            AWS_REGION,
 		AWS_IDENTITY:          AWS_IDENTITY,
