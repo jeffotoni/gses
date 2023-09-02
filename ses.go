@@ -440,6 +440,51 @@ func (pf *profile) Send(paramses ...string) error {
 }
 
 // SendEmailSes ..
+func (config *Config) SendEmailSesNew(To, From, FromMsg, Titulo, MsgHTML string) bool {
+
+	To = strings.TrimSpace(To)
+	From = strings.TrimSpace(From)
+	FromMsg = strings.TrimSpace(FromMsg)
+	Titulo = strings.TrimSpace(Titulo)
+
+	FromMsg = removeAccents(FromMsg)
+	Titulo = removeAccents(Titulo)
+
+	//
+	//
+	//
+	var err error
+
+	S := AwsSesSetProfile(
+
+		config.AWS_REGION,
+
+		config.AWS_IDENTITY,
+
+		From, // AWS_FROM
+
+		FromMsg, // AWS_MSG
+	)
+
+	err = S.Send(
+
+		To,
+
+		MsgHTML,
+
+		Titulo,
+	)
+
+	if err != nil {
+		log.Println("Error sending SES email: ", To, " error: ", err)
+		return false
+
+	}
+	return true
+
+}
+
+// SendEmailSes ..
 func SendEmailSes(To, From, FromMsg, Titulo, MsgHTML string) bool {
 
 	To = strings.TrimSpace(To)
