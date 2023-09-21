@@ -2,135 +2,104 @@
 package ses
 
 import (
+	"bytes"
+	"context"
+	"encoding/base64"
+	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ses"
-	fmts "github.com/jeffotoni/gconcat"
-	"github.com/jeffotoni/gses/config"
-	"github.com/jeffotoni/gses/models"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	ses "github.com/aws/aws-sdk-go-v2/service/sesv2"
+	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
+	"github.com/jeffotoni/gses/v2/models"
 	"github.com/pkg/errors"
 )
 
-// SesEmail  email struct
-// We will assemble our data map with this structure
-type SesEmail struct {
-	config   *config.Config
-	ses      *ses.SES
-	Profiles map[string]*profile
+type Client struct {
+	ses    *ses.Client
+	region string
+	key    string
+	secret string
 }
 
-// Ses COnstructor
-func NewSesEmail(config *config.Config) *SesEmail {
-	return &SesEmail{
-		config:   config,
-		ses:      &ses.SES{},
-		Profiles: make(map[string]*profile),
+func NewClient(region, key, secret string) *Client {
+	return &Client{
+		ses:    &ses.Client{},
+		region: region,
+		key:    key,
+		secret: secret,
 	}
 }
 
-func splitAddr(s string) []string {
-	sp := strings.Split(s, ",")
-
-	items := make([]string, len(sp))
-	for i := range sp {
-		items = append(items, items[i])
-	}
-
-	return items
-}
-
-// EmailTo string, Cc string, Bc string, Html string, Subject string
-//
-// func (pf *profile) Send(EmailTo string, Html string, Subject string, Cc string, Bcc string) error {
-func (s *SesEmail) send(pf *profile, data *models.DataEmail) error {
-
-	DestinationV := &ses.Destination{}
-
-	for _, v := range splitAddr(data.To) {
-
-		DestinationV.ToAddresses = append(DestinationV.ToAddresses, aws.String(v))
-	}
-
-	for _, addr := range splitAddr(data.CcAddresses) {
-
-		DestinationV.CcAddresses = append(DestinationV.CcAddresses, aws.String(addr))
-	}
-
-	for _, addr := range splitAddr(data.BccAddresses) {
-
-		DestinationV.BccAddresses = append(DestinationV.BccAddresses, aws.String(addr))
-	}
-
-	params := &ses.SendEmailInput{
-
-		Destination: DestinationV,
-
-		Message: &ses.Message{ // Required
-			Body: &ses.Body{ // Required
-				Html: &ses.Content{
-					Data:    aws.String(data.MsgHTML), // Required
-					Charset: aws.String("utf-8"),
-				},
-
-				//,
-				// Text: &ses.Content{
-				//     Data:    aws.String("MessageData"), // Required
-				//     Charset: aws.String("Charset"),
-				// },
-			},
-			Subject: &ses.Content{ // Required
-				Data:    aws.String(data.Title), // Required
-				Charset: aws.String("utf-8"),
-			},
-		},
-
-		Source:           pf.From,
-		ReplyToAddresses: pf.ReplyTo,
-		//ReturnPath:       pf.ReturnPath,
-		//ReturnPathArn:    pf.ReturnPathArn,
-		//SourceArn:        pf.SourceArn,
-	}
-
-	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(s.config.AwsAccess, s.config.AwsSecret, ""),
-		Region:      aws.String(pf.Region),
-	})
-
-	// sess, err = session.NewSession(&aws.Config{
-	// 	Region: aws.String(pf.Region),
-	// })
-
-	if err != nil {
-		return errors.New(fmts.ConcatStr("send.NewSession:", err.Error()))
-	}
-
-	svc := ses.New(sess)
-	_, err = svc.SendEmail(params)
-	if err != nil {
-		return errors.New(fmts.ConcatStr("send.SendMail:", err.Error()))
-
-	}
-	return nil
-}
-
-// SendEmailSes ..
-func (s *SesEmail) SendEmailSes(profileName string, data *models.DataEmail) error {
-
+func (c *Client) Send(ctx context.Context, data models.DataEmail) error {
 	if err := data.Validate(); err != nil {
 		return err
 	}
 
-	if len(s.Profiles) == 0 {
-		return errors.Wrap(ErrNoProfileSet, "SendEmailSes len s.Profiles == 0")
+	destination := types.Destination{
+		ToAddresses:  data.ToAddresses,
+		BccAddresses: data.BccAddresses,
+		CcAddresses:  data.CcAddresses,
 	}
 
-	profile, ok := s.Profiles[profileName]
-	if !ok {
-		return errors.Wrap(ErrProfileNotSearched, "SendEmailSes.Profiles[profileName]")
+	var emailBody bytes.Buffer
+
+	header := fmt.Sprintf(
+		"From: %s\nTo: %s\nBcc: %s\nCc: %s\nSubject: %s\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n\n",
+		data.From,
+		strings.Join(data.ToAddresses, ","),
+		strings.Join(data.BccAddresses, ","),
+		strings.Join(data.CcAddresses, ","),
+		data.Title,
+		"--_GoBoundary",
+	)
+	emailBody.WriteString(header)
+
+	emailBody.WriteString("----_GoBoundary\n")
+	emailBody.WriteString("Content-Type: text/html; charset=UTF-8\n")
+	emailBody.WriteString("Content-Transfer-Encoding: base64\n\n")
+	emailBody.WriteString(base64.StdEncoding.EncodeToString([]byte(data.MsgHTML)))
+	emailBody.WriteString("\n")
+
+	for _, v := range data.Attachments {
+		emailBody.WriteString("----_GoBoundary\n")
+		emailBody.WriteString(fmt.Sprintf("Content-Type: text/csv; name=\"%s\"\n", v.Name)) //fname[len(fname)-1]))
+		emailBody.WriteString("Content-Description: file\n")
+		emailBody.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"; size=%d;\n", v.Name, len(v.Name))) //fname[len(fname)-1], len(fdata)))
+		emailBody.WriteString("Content-Transfer-Encoding: base64\n\n")
+		emailBody.WriteString(base64.StdEncoding.EncodeToString(v.Data))
+		emailBody.WriteString("\n")
 	}
 
-	return s.send(profile, data)
+	emailBody.WriteString("----_GoBoundary--\n")
+
+	params := &ses.SendEmailInput{
+		Destination: &destination,
+		Content: &types.EmailContent{
+			Raw: &types.RawMessage{Data: emailBody.Bytes()},
+		},
+
+		// Source:           pf.From,
+		// ReplyToAddresses: pf.ReplyTo,
+		// ReturnPath:       pf.ReturnPath,
+		// ReturnPathArn:    pf.ReturnPathArn,
+		// SourceArn:        pf.SourceArn,
+	}
+
+	svc := ses.NewFromConfig(aws.Config{
+		Credentials: credentials.NewStaticCredentialsProvider(
+			c.key,
+			c.secret,
+			"",
+		),
+		Region: c.region,
+	})
+	if svc == nil {
+		return errors.New("svc is nil")
+
+	}
+
+	_, err := svc.SendEmail(ctx, params)
+	return err
 }

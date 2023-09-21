@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	config "github.com/jeffotoni/gses/config"
-	"github.com/jeffotoni/gses/models"
+	config "github.com/jeffotoni/gses/v2/config"
+	"github.com/jeffotoni/gses/v2/models"
 	"github.com/stretchr/testify/require"
 )
 

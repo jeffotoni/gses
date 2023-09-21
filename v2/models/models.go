@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"strings"
 	"unicode"
 
 	"golang.org/x/text/runes"
@@ -12,54 +11,48 @@ import (
 
 // DataEmail ..
 type DataEmail struct {
-	To      string `json:"to"`
-	From    string `json:"from"`
-	FromMsg string `json:"frommsg"`
-	Title   string `json:"titulo"`
-	MsgHTML string `json:"msghtml"`
-
-	BccAddresses string
-	// The recipients to place on the CC: line of the message.
-	CcAddresses string
+	ToAddresses  []string     `json:"toAddresses"`
+	From         string       `json:"from"`
+	FromMsg      string       `json:"frommsg"`
+	Title        string       `json:"titulo"`
+	MsgHTML      string       `json:"msghtml"`
+	Charset      string       `json:"charset"`
+	BccAddresses []string     `json:"bccAddresses"`
+	CcAddresses  []string     `json:"ccAddresses"`
+	Attachments  []Attachment `json:"attachments"`
 }
 
-func NewDataEmail(to, from, message, title, htmlMsgBody, bccAddress, ccAddress string) *DataEmail {
-	return &DataEmail{
-		To:           strings.TrimSpace(to),
-		From:         strings.TrimSpace(from),
-		FromMsg:      strings.TrimSpace(message),
-		Title:        strings.TrimSpace(title),
-		MsgHTML:      htmlMsgBody,
-		BccAddresses: strings.TrimSpace(bccAddress),
-		CcAddresses:  strings.TrimSpace(ccAddress),
-	}
+type Attachment struct {
+	Data []byte
+	Name string
 }
 
 func (d *DataEmail) Validate() error {
 	switch 0 {
-	case len(d.To):
-		return ErrInvalidTo{}
-		// case len(d.From):
-		// 	return ErrInvalidFrom{}
-		// case len(d.FromMsg):
-		// 	return ErrInvalidMessage{}
-		// case len(d.Title):
-		// 	return ErrInvalidTitle{}
-		// case len(d.MsgHTML):
-		// 	return ErrInvalidMessageHTML{}
+	case len(d.ToAddresses):
+		return ErrInvalidTo
+	case len(d.From):
+		return ErrInvalidFrom
+	case len(d.FromMsg):
+		return ErrInvalidMessage
+	case len(d.Title):
+		return ErrInvalidTitle
+	case len(d.MsgHTML):
+		return ErrInvalidMessageHTML
 	}
 
-	var err error
-
-	d.Title, err = removeAccents(d.Title)
+	title, err := removeAccents(d.Title)
 	if err != nil {
 		return err
 	}
 
-	d.FromMsg, err = removeAccents(d.FromMsg)
+	fromMsg, err := removeAccents(d.FromMsg)
 	if err != nil {
 		return err
 	}
+
+	d.Title = title
+	d.FromMsg = fromMsg
 
 	return nil
 }

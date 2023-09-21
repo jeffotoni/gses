@@ -1,31 +1,11 @@
 package models
 
-type ErrInvalidTo struct{}
+import "errors"
 
-func (e ErrInvalidTo) Error() string {
-	return "parameter 'to' is required."
-}
-
-type ErrInvalidFrom struct{}
-
-func (e ErrInvalidFrom) Error() string {
-	return "parameter 'from' is required."
-}
-
-type ErrInvalidMessage struct{}
-
-func (e ErrInvalidMessage) Error() string {
-	return "parameter 'message' is required."
-}
-
-type ErrInvalidTitle struct{}
-
-func (e ErrInvalidTitle) Error() string {
-	return "parameter 'title' is required."
-}
-
-type ErrInvalidMessageHTML struct{}
-
-func (e ErrInvalidMessageHTML) Error() string {
-	return "parameter 'messageHtml' is required."
-}
+var (
+	ErrInvalidTo          = errors.New("parameter 'to' is required.")
+	ErrInvalidFrom        = errors.New("parameter 'from' is required.")
+	ErrInvalidMessage     = errors.New("parameter 'message' is required.")
+	ErrInvalidTitle       = errors.New("parameter 'to' title required.")
+	ErrInvalidMessageHTML = errors.New("parameter 'messageHtml' is required.")
+)
