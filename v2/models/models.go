@@ -9,17 +9,26 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// DataEmail ..
 type DataEmail struct {
-	ToAddresses  []string     `json:"toAddresses"`
-	From         string       `json:"from"`
-	FromMsg      string       `json:"frommsg"`
-	Title        string       `json:"titulo"`
-	MsgHTML      string       `json:"msghtml"`
-	Charset      string       `json:"charset"`
-	BccAddresses []string     `json:"bccAddresses"`
-	CcAddresses  []string     `json:"ccAddresses"`
-	Attachments  []Attachment `json:"attachments"`
+	// Required at least 1
+	ToAddresses []string
+
+	// Required
+	From string
+
+	// Required
+	FromMsg string
+
+	// Required
+	Title string
+
+	// Required
+	MsgHTML string
+
+	Charset      string
+	BccAddresses []string
+	CcAddresses  []string
+	Attachments  []Attachment
 }
 
 type Attachment struct {
