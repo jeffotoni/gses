@@ -1,109 +1,43 @@
 package ses
 
 import (
-	"fmt"
+	"context"
 	"os"
-	"strings"
 	"testing"
-	"time"
 
-	config "github.com/jeffotoni/gses/v2/config"
 	"github.com/jeffotoni/gses/v2/models"
-	"github.com/stretchr/testify/require"
 )
-
-var (
-	envName     = "/.env"
-	pathWorking = "./"
-)
-
-func createEnvContent(path string, content string) error {
-	return os.WriteFile(path+envName, []byte(strings.TrimSpace(content)), 0644)
-}
-
-func delFile() error {
-	return os.Remove(pathWorking + envName)
-}
 
 func TestSendEmail(t *testing.T) {
+	var (
+		AWS_REGION            = os.Getenv("AWS_REGION")
+		AWS_ACCESS_KEY_ID     = os.Getenv("AWS_ACCESS_KEY_ID")
+		AWS_SECRET_ACCESS_KEY = os.Getenv("AWS_SECRET_ACCESS_KEY")
 
-	expectedConfig := config.Config{
-		AwsRegion:    "region",
-		AwsIdentity:  "identity",
-		AwsAccess:    "access",
-		AwsSecret:    "secret",
-		AwsFrom:      "from",
-		AwsMessage:   "message",
-		AwsInfo:      "info",
-		SendInterval: time.Duration(10) * time.Second,
-	}
-
-	content := fmt.Sprintf(`
-	AWS_REGION="%s"
-AWS_IDENTITY="%s"
-AWS_ACCESS_KEY_ID="%s"
-AWS_SECRET_ACCESS_KEY="%s"
-AWS_FROM="%s"
-AWS_MSG="%s"
-AWS_INFO="%s"
-SEND_INTERVAL=%v`,
-		expectedConfig.AwsRegion,
-		expectedConfig.AwsIdentity,
-		expectedConfig.AwsAccess,
-		expectedConfig.AwsSecret,
-		expectedConfig.AwsFrom,
-		expectedConfig.AwsMessage,
-		expectedConfig.AwsInfo,
-		expectedConfig.SendInterval,
+		AWS_FROM = os.Getenv("AWS_FROM")
+		AWS_TO1  = os.Getenv("AWS_TO1")
+		AWS_TO2  = os.Getenv("AWS_TO2")
 	)
 
-	err := createEnvContent(pathWorking, content)
-	require.NoError(t, err)
+	c := NewClient(AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
-	defer delFile()
+	htmlBody := `<h1>Hello World</h1>`
 
-	cfg, err := config.FromFile(pathWorking)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+	req := models.DataEmail{
+		ToAddresses:  []string{AWS_TO1},
+		From:         AWS_FROM,
+		FromMsg:      "message",
+		Title:        "title",
+		MsgHTML:      htmlBody,
+		BccAddresses: []string{AWS_TO1, AWS_TO2},
+		CcAddresses:  []string{AWS_TO1},
+		Attachments: []models.Attachment{
+			{Data: []byte("text 1"), Name: "file1.txt"},
+			{Data: []byte("text 2"), Name: "file2.txt"},
+		},
+	}
 
-	defaultProfile := "default"
-	fakeProfileNotExist := "fake-profile"
-
-	ses := NewSesEmail(cfg)
-
-	t.Run("PASS send mail", func(t *testing.T) {
-
-		prof, err := ses.AddProfile(defaultProfile, cfg.AwsRegion, cfg.AwsIdentity, cfg.AwsFrom, cfg.AwsInfo)
-		require.NoError(t, err)
-		require.NotNil(t, prof)
-
-		data := models.NewDataEmail("to", "from", "message", "title", "htmlMsgBody", "bccAddress", "ccAddress")
-
-		err = ses.SendEmailSes(defaultProfile, data)
-		require.NoError(t, err)
-	})
-
-	t.Run("FAIL no Profile Set", func(t *testing.T) {
-		//No set profile
-
-		// ses.AddProfile(defaultProfile, config.AwsRegion, config.AwsIdentity, config.AwsFrom, config.AwsInfo)
-
-		data := models.NewDataEmail("to", "from", "message", "title", "htmlMsgBody", "bccAddress", "ccAddress")
-
-		err := ses.SendEmailSes(fakeProfileNotExist, data)
-		require.Error(t, err, ErrNoProfileSet)
-	})
-
-	t.Run("FAIL profile not searched", func(t *testing.T) {
-
-		prof, err := ses.AddProfile(defaultProfile, cfg.AwsRegion, cfg.AwsIdentity, cfg.AwsFrom, cfg.AwsInfo)
-		require.NoError(t, err)
-		require.NotNil(t, prof)
-
-		data := models.NewDataEmail("to", "from", "message", "title", "htmlMsgBody", "bccAddress", "ccAddress")
-
-		//Profile param in function SendEmailSes no added
-		err = ses.SendEmailSes(fakeProfileNotExist, data)
-		require.Error(t, err, ErrProfileNotSearched)
-	})
+	if err := c.Send(context.Background(), req); err != nil {
+		t.Error(err)
+	}
 }

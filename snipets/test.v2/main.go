@@ -21,7 +21,11 @@ var (
 )
 
 func main() {
-	c := ses.NewClient(AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+	c := ses.NewClient(
+		AWS_REGION,
+		AWS_ACCESS_KEY_ID,
+		AWS_SECRET_ACCESS_KEY,
+	)
 
 	htmlBody := `<h1>Hello World</h1>`
 
