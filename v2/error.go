@@ -1,4 +1,4 @@
-package models
+package sesv2
 
 import "errors"
 

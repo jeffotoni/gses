@@ -1,34 +1,31 @@
-# GSES - AWS SES client from Go
+# GSES - AWS SES Client From Go
 
 > A package to send emails using AWS SES, facilitating its abstraction using the SES GO SDK.
 > In order for your email to be sent successfully using the aws sdk you need to have an email validated by SES (Verify This Email Address), console access can be done by clicking here https://console.aws.amazon.com/ses, it will Also need your Identity ARN.
 
-## Installation
+## Installation v2
 
 ```
-go get github.com/jeffotoni/gses
+go install github.com/jeffotoni/gses@v0.1.1
 ```
 
-## Quickstart
+## Quickstart v2
 
 ```go
-
 package main
 
 import (
 	"context"
 	"log"
 	"os"
-
-	"github.com/jeffotoni/gses/v2/models"
-	"github.com/jeffotoni/gses/v2/ses"
+	"github.com/jeffotoni/gses/v2"
 )
 
 var (
 	AWS_REGION            = os.Getenv("AWS_REGION")
 	AWS_ACCESS_KEY_ID     = os.Getenv("AWS_ACCESS_KEY_ID")
 	AWS_SECRET_ACCESS_KEY = os.Getenv("AWS_SECRET_ACCESS_KEY")
-
+	
 	AWS_FROM = os.Getenv("AWS_FROM")
 	AWS_TO1  = os.Getenv("AWS_TO")
 )
@@ -44,8 +41,8 @@ func main() {
 		ToAddresses:  []string{AWS_TO},
 		From:         AWS_FROM,
 		FromMsg:      "message",
-		Title:        "title",
-		MsgHTML:      "<h1>Hello World</h1>",
+		Title:        "Your Title here",
+		MsgHTML:      "<h1>Your body message here using HTML</h1>",
 	}
 
 	if err := c.Send(context.Background(), req); err != nil {
@@ -55,7 +52,7 @@ func main() {
 
 ```
 
-## Email sent
+## Data Email and Attachment
 
 When you send an email, it can have the following data:
 
@@ -77,8 +74,11 @@ type DataEmail struct {
 	MsgHTML      string   
 	
 	Charset      string
+
 	BccAddresses []string
+
 	CcAddresses  []string
+
 	Attachments  []Attachment
 }
 
@@ -99,8 +99,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jeffotoni/gses/v2/models"
-	"github.com/jeffotoni/gses/v2/ses"
+	"github.com/jeffotoni/gses/v2"
 )
 
 var (
@@ -137,8 +136,8 @@ func main() {
 		ToAddresses:  []string{AWS_TO1},
 		From:         AWS_FROM,
 		FromMsg:      "message",
-		Title:        "title",
-		MsgHTML:      "<h1>Hello World</h1>",
+		Title:        "Your Title here",
+		MsgHTML:      "<h1>Your body message here using HTML and Attachments</h1>",
 		BccAddresses: []string{AWS_TO1, AWS_TO2},
 		CcAddresses:  []string{AWS_TO1},
 		Attachments: []models.Attachment{
@@ -154,10 +153,17 @@ func main() {
 
 ```
 
-## [DEPRECATED] - v1 Quickstart
+## Installation v0.0.5
+
+This was the first version of sending email using SES AWS, and we will keep it working 100% just attachments will not work.
+
+```
+go install github.com/jeffotoni/gses@v0.0.5
+```
+
+## Quickstart v0.0.5
 
 ```go
-
 package main
 
 import (
@@ -176,7 +182,6 @@ func main() {
 	ok, err := ses.SendEmail(To, From, FromMsg, Titule, MsgHTML)
 	fmt.Println(ok)
 	fmt.Println(err)
-
 }
 
 ```

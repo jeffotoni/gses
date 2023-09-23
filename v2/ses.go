@@ -1,5 +1,5 @@
 // @autor: @jeffotoni
-package ses
+package sesv2
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	ses "github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
-	"github.com/jeffotoni/gses/v2/models"
 	"github.com/pkg/errors"
 )
 
@@ -32,7 +31,7 @@ func NewClient(region, key, secret string) *Client {
 	}
 }
 
-func (c *Client) Send(ctx context.Context, data models.DataEmail) error {
+func (c *Client) Send(ctx context.Context, data DataEmail) error {
 	if err := data.Validate(); err != nil {
 		return err
 	}

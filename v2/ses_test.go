@@ -1,11 +1,10 @@
-package ses
+package sesv2
 
 import (
 	"context"
+	"log"
 	"os"
 	"testing"
-
-	"github.com/jeffotoni/gses/v2/models"
 )
 
 func TestSendEmail(t *testing.T) {
@@ -21,19 +20,25 @@ func TestSendEmail(t *testing.T) {
 
 	c := NewClient(AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
-	htmlBody := `<h1>Hello World</h1>`
+	htmlBody := `<h1>Hello World Send Email SES</h1>`
 
-	req := models.DataEmail{
+	fname1 := "file1.txt"
+	data1, err := os.ReadFile(fname1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req := DataEmail{
 		ToAddresses:  []string{AWS_TO1},
 		From:         AWS_FROM,
 		FromMsg:      "message",
-		Title:        "title",
+		Title:        "My Test Send Email",
 		MsgHTML:      htmlBody,
 		BccAddresses: []string{AWS_TO1, AWS_TO2},
 		CcAddresses:  []string{AWS_TO1},
-		Attachments: []models.Attachment{
-			{Data: []byte("text 1"), Name: "file1.txt"},
-			{Data: []byte("text 2"), Name: "file2.txt"},
+		Attachments: []Attachment{
+			{Data: data1, Name: "file1.txt"},
+			{Data: data1, Name: "file2.txt"},
 		},
 	}
 

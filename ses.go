@@ -46,9 +46,6 @@ var (
 	AWS_IDENTITY          = os.Getenv("AWS_IDENTITY")
 	AWS_ACCESS_KEY_ID     = os.Getenv("AWS_ACCESS_KEY_ID")
 	AWS_SECRET_ACCESS_KEY = os.Getenv("AWS_SECRET_ACCESS_KEY")
-
-	AWS_FROM = ""
-	AWS_MSG  = ""
 )
 
 func init() {
