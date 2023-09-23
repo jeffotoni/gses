@@ -163,6 +163,15 @@ go install github.com/jeffotoni/gses@v0.0.5
 
 ## Quickstart v0.0.5
 
+Don't forget to add the environment variables
+
+```bash
+$ export AWS_REGION=""
+$ export AWS_SECRET_ACCESS_KEY=""
+$ export AWS_ACCESS_KEY_ID="" 
+$ export AWS_IDENTITY=""
+```
+
 ```go
 package main
 
