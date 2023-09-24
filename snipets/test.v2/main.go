@@ -5,8 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jeffotoni/gses/v2/models"
-	"github.com/jeffotoni/gses/v2/ses"
+	sesv2 "github.com/jeffotoni/gses/v2"
 )
 
 var (
@@ -21,7 +20,7 @@ var (
 )
 
 func main() {
-	c := ses.NewClient(
+	c := sesv2.NewClient(
 		AWS_REGION,
 		AWS_ACCESS_KEY_ID,
 		AWS_SECRET_ACCESS_KEY,
@@ -39,7 +38,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	req := models.DataEmail{
+	req := sesv2.DataEmail{
 		ToAddresses:  []string{AWS_TO1},
 		From:         AWS_FROM,
 		FromMsg:      "message",
@@ -47,7 +46,7 @@ func main() {
 		MsgHTML:      htmlBody,
 		BccAddresses: []string{AWS_TO1, AWS_TO2},
 		CcAddresses:  []string{AWS_TO1},
-		Attachments: []models.Attachment{
+		Attachments: []sesv2.Attachment{
 			{Data: data1, Name: "file1.pdf"},
 			{Data: data2, Name: "file2.pdf"},
 		},
