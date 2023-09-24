@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -32,7 +31,7 @@ func getMIMEEmail(from, to, subject, htmlBody string, attachmentPaths []string) 
 	// Attachments
 	for _, filePath := range attachmentPaths {
 		fileName := strings.Split(filePath, "/")
-		fileBytes, err := ioutil.ReadFile(filePath)
+		fileBytes, err := os.ReadFile(filePath)
 		if err != nil {
 			return "", err
 		}
