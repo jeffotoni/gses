@@ -8,7 +8,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.39
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.20.0
 	github.com/jeffotoni/gconcat v0.0.14
-	github.com/pkg/errors v0.9.1
 	golang.org/x/text v0.9.0
 )
 

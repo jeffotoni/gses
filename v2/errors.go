@@ -1,8 +1,12 @@
-package sesv2
+package v2
 
 import "errors"
 
 var (
-	ErrNoProfileSet       = errors.New("no profile set")
-	ErrProfileNotSearched = errors.New("profile no exists")
+	ErrInvalidTo          = errors.New("parameter 'to' is required")
+	ErrInvalidFrom        = errors.New("parameter 'from' is required")
+	ErrInvalidMessage     = errors.New("parameter 'message' is required")
+	ErrInvalidTitle       = errors.New("parameter 'to' title required")
+	ErrInvalidMessageHTML = errors.New("parameter 'messageHtml' is required")
+	ErrNilSVC             = errors.New("nil svc")
 )

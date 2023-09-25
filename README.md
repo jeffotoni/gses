@@ -6,7 +6,7 @@
 ## Installation v2
 
 ```
-go install github.com/jeffotoni/gses@v0.1.1
+go install github.com/jeffotoni/gses
 ```
 
 ## Quickstart v2

@@ -1,5 +1,5 @@
 // @autor: @jeffotoni
-package sesv2
+package v2
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	ses "github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
-	"github.com/pkg/errors"
 )
 
 type Client struct {
@@ -78,12 +77,6 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 		Content: &types.EmailContent{
 			Raw: &types.RawMessage{Data: emailBody.Bytes()},
 		},
-
-		// Source:           pf.From,
-		// ReplyToAddresses: pf.ReplyTo,
-		// ReturnPath:       pf.ReturnPath,
-		// ReturnPathArn:    pf.ReturnPathArn,
-		// SourceArn:        pf.SourceArn,
 	}
 
 	svc := ses.NewFromConfig(aws.Config{
@@ -95,7 +88,7 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 		Region: c.region,
 	})
 	if svc == nil {
-		return errors.New("svc is nil")
+		return ErrNilSVC
 
 	}
 

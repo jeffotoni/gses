@@ -1,4 +1,4 @@
-package sesv2
+package v2
 
 import (
 	"context"
