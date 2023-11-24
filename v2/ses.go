@@ -18,7 +18,7 @@ var HttpClient = &http.Client{
 	Transport: &http.Transport{
 		DisableKeepAlives: true,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: false,
 		},
 	},
 }
