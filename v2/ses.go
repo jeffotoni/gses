@@ -10,9 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	ses "github.com/aws/aws-sdk-go-v2/service/sesv2"
-	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ses"
 )
 
 var HttpClient = &http.Client{
@@ -25,7 +24,7 @@ var HttpClient = &http.Client{
 }
 
 type Client struct {
-	ses    *ses.Client
+	// ses    *ses.Client
 	region string
 	key    string
 	secret string
@@ -33,7 +32,7 @@ type Client struct {
 
 func NewClient(region, key, secret string) *Client {
 	return &Client{
-		ses:    &ses.Client{},
+		// ses:    &ses.Client{},
 		region: region,
 		key:    key,
 		secret: secret,
@@ -45,10 +44,10 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 		return err
 	}
 
-	destination := types.Destination{
-		ToAddresses:  data.ToAddresses,
-		BccAddresses: data.BccAddresses,
-		CcAddresses:  data.CcAddresses,
+	destination := ses.Destination{
+		ToAddresses:  parseStringArray(data.ToAddresses),
+		BccAddresses: parseStringArray(data.BccAddresses),
+		CcAddresses:  parseStringArray(data.CcAddresses),
 	}
 
 	var emailBody bytes.Buffer
@@ -82,27 +81,43 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 
 	emailBody.WriteString("----_GoBoundary--\n")
 
+	d := string(emailBody.Bytes())
 	params := &ses.SendEmailInput{
 		Destination: &destination,
-		Content: &types.EmailContent{
-			Raw: &types.RawMessage{Data: emailBody.Bytes()},
+		Message: &ses.Message{
+			Body: &ses.Body{Text: &ses.Content{Data: &d}},
 		},
 	}
 
-	svc := ses.NewFromConfig(aws.Config{
-		// Credentials: credentials.NewStaticCredentialsProvider(
-		// 	c.key,
-		// 	c.secret,
-		// 	"",
-		// ),
-		HTTPClient: HttpClient,
-		Region:     c.region,
-	})
+	// svc := ses.NewFromConfig(aws.Config{
+	// Credentials: credentials.NewStaticCredentialsProvider(
+	// 	c.key,
+	// 	c.secret,
+	// 	"",
+	// ),
+	// 	Credentials: credentia,
+	// 	HTTPClient: HttpClient,
+	// 	Region:     c.region,
+	// })
+	sess, err := session.NewSessionWithOptions(session.Options{})
+	if err != nil {
+		return err
+	}
+
+	svc := ses.New(sess)
 	if svc == nil {
 		return ErrNilSVC
 
 	}
 
-	_, err := svc.SendEmail(ctx, params)
+	_, err = svc.SendEmail(params)
 	return err
+}
+
+func parseStringArray(s []string) []*string {
+	var a []*string
+	for _, v := range s {
+		a = append(a, &v)
+	}
+	return a
 }
