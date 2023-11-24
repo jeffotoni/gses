@@ -4,15 +4,25 @@ package v2
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	ses "github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
 )
+
+var HttpClient = &http.Client{
+	Transport: &http.Transport{
+		DisableKeepAlives: true,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	},
+}
 
 type Client struct {
 	ses    *ses.Client
@@ -80,12 +90,13 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 	}
 
 	svc := ses.NewFromConfig(aws.Config{
-		Credentials: credentials.NewStaticCredentialsProvider(
-			c.key,
-			c.secret,
-			"",
-		),
-		Region: c.region,
+		// Credentials: credentials.NewStaticCredentialsProvider(
+		// 	c.key,
+		// 	c.secret,
+		// 	"",
+		// ),
+		HTTPClient: HttpClient,
+		Region:     c.region,
 	})
 	if svc == nil {
 		return ErrNilSVC
