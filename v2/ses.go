@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
 )
@@ -101,7 +102,8 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 	// 	HTTPClient: HttpClient,
 	// 	Region:     c.region,
 	// })
-	sess, err := session.NewSessionWithOptions(session.Options{})
+	disableSsl := true
+	sess, err := session.NewSessionWithOptions(session.Options{Config: aws.Config{DisableSSL: &disableSsl}})
 	if err != nil {
 		return err
 	}
