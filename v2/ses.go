@@ -81,11 +81,13 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 
 	emailBody.WriteString("----_GoBoundary--\n")
 
-	d := string(emailBody.Bytes())
+	d := emailBody.String()
 	params := &ses.SendEmailInput{
 		Destination: &destination,
+		Source:      &data.From,
 		Message: &ses.Message{
-			Body: &ses.Body{Text: &ses.Content{Data: &d}},
+			Body:    &ses.Body{Text: &ses.Content{Data: &d}},
+			Subject: &ses.Content{Data: &data.FromMsg},
 		},
 	}
 
