@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
 )
@@ -19,7 +18,7 @@ var HttpClient = &http.Client{
 	Transport: &http.Transport{
 		DisableKeepAlives: true,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: false,
+			InsecureSkipVerify: true,
 		},
 	},
 }
@@ -82,10 +81,9 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 
 	emailBody.WriteString("----_GoBoundary--\n")
 
-	d := emailBody.String()
+	d := string(emailBody.Bytes())
 	params := &ses.SendEmailInput{
 		Destination: &destination,
-		Source:      &data.From,
 		Message: &ses.Message{
 			Body:    &ses.Body{Text: &ses.Content{Data: &d}},
 			Subject: &ses.Content{Data: &data.FromMsg},
@@ -102,8 +100,7 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 	// 	HTTPClient: HttpClient,
 	// 	Region:     c.region,
 	// })
-	disableSsl := true
-	sess, err := session.NewSessionWithOptions(session.Options{Config: aws.Config{DisableSSL: &disableSsl}})
+	sess, err := session.NewSessionWithOptions(session.Options{})
 	if err != nil {
 		return err
 	}
