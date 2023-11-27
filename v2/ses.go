@@ -83,6 +83,7 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 
 	d := string(emailBody.Bytes())
 	params := &ses.SendEmailInput{
+		Source:      &data.From,
 		Destination: &destination,
 		Message: &ses.Message{
 			Body:    &ses.Body{Text: &ses.Content{Data: &d}},
