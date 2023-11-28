@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	ses "github.com/aws/aws-sdk-go-v2/service/sesv2"
-	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
-	"github.com/pkg/errors"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ses"
 )
 
+const boundary = "--_GoBoundary"
+
 type Client struct {
-	ses    *ses.Client
 	region string
 	key    string
 	secret string
@@ -24,7 +24,6 @@ type Client struct {
 
 func NewClient(region, key, secret string) *Client {
 	return &Client{
-		ses:    &ses.Client{},
 		region: region,
 		key:    key,
 		secret: secret,
@@ -36,14 +35,50 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 		return err
 	}
 
-	destination := types.Destination{
-		ToAddresses:  data.ToAddresses,
-		BccAddresses: data.BccAddresses,
-		CcAddresses:  data.CcAddresses,
+	mime, err := getMIMEEmail(data)
+	if err != nil {
+		return err
 	}
 
+	params := &ses.SendRawEmailInput{
+		RawMessage: &ses.RawMessage{
+			Data: []byte(mime),
+		},
+	}
+
+	s, err := c.getSession()
+	if err != nil {
+		return err
+	}
+
+	_, err = s.SendRawEmail(params)
+	return err
+}
+
+func (c *Client) getSession() (*ses.SES, error) {
+	var sess *session.Session
+	var err error
+	if len(c.key) > 0 && len(c.secret) > 0 {
+		sess, err = session.NewSession(&aws.Config{
+			Credentials: credentials.NewStaticCredentials(c.key, c.secret, ""),
+			Region:      aws.String(c.region),
+		})
+	} else {
+		sess, err = session.NewSession(&aws.Config{
+			Region: aws.String(c.region),
+		})
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return ses.New(sess), nil
+}
+
+func getMIMEEmail(data DataEmail) (string, error) {
 	var emailBody bytes.Buffer
 
+	// Headers
 	header := fmt.Sprintf(
 		"From: %s\nTo: %s\nBcc: %s\nCc: %s\nSubject: %s\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n\n",
 		data.From,
@@ -51,54 +86,31 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 		strings.Join(data.BccAddresses, ","),
 		strings.Join(data.CcAddresses, ","),
 		data.Title,
-		"--_GoBoundary",
+		boundary,
 	)
 	emailBody.WriteString(header)
 
-	emailBody.WriteString("----_GoBoundary\n")
+	// HTML Body
+	emailBody.WriteString(fmt.Sprintf("--%s\n", boundary))
 	emailBody.WriteString("Content-Type: text/html; charset=UTF-8\n")
 	emailBody.WriteString("Content-Transfer-Encoding: base64\n\n")
 	emailBody.WriteString(base64.StdEncoding.EncodeToString([]byte(data.MsgHTML)))
 	emailBody.WriteString("\n")
 
+	// Attachments
 	for _, v := range data.Attachments {
-		emailBody.WriteString("----_GoBoundary\n")
-		emailBody.WriteString(fmt.Sprintf("Content-Type: text/csv; name=\"%s\"\n", v.Name)) //fname[len(fname)-1]))
+
+		emailBody.WriteString(fmt.Sprintf("--%s\n", boundary))
+		emailBody.WriteString(fmt.Sprintf("Content-Type: application/octet-stream; name=\"%s\"\n", v.Name))
 		emailBody.WriteString("Content-Description: file\n")
-		emailBody.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"; size=%d;\n", v.Name, len(v.Name))) //fname[len(fname)-1], len(fdata)))
+		emailBody.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"; size=%d;\n", v.Name, len(v.Data)))
 		emailBody.WriteString("Content-Transfer-Encoding: base64\n\n")
 		emailBody.WriteString(base64.StdEncoding.EncodeToString(v.Data))
 		emailBody.WriteString("\n")
 	}
 
-	emailBody.WriteString("----_GoBoundary--\n")
+	// Final boundary
+	emailBody.WriteString(fmt.Sprintf("--%s--\n", boundary))
 
-	params := &ses.SendEmailInput{
-		Destination: &destination,
-		Content: &types.EmailContent{
-			Raw: &types.RawMessage{Data: emailBody.Bytes()},
-		},
-
-		// Source:           pf.From,
-		// ReplyToAddresses: pf.ReplyTo,
-		// ReturnPath:       pf.ReturnPath,
-		// ReturnPathArn:    pf.ReturnPathArn,
-		// SourceArn:        pf.SourceArn,
-	}
-
-	svc := ses.NewFromConfig(aws.Config{
-		Credentials: credentials.NewStaticCredentialsProvider(
-			c.key,
-			c.secret,
-			"",
-		),
-		Region: c.region,
-	})
-	if svc == nil {
-		return errors.New("svc is nil")
-
-	}
-
-	_, err := svc.SendEmail(ctx, params)
-	return err
+	return emailBody.String(), nil
 }

@@ -9,11 +9,20 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
 )
 
 const boundary = "--_GoBoundary"
+
+var (
+	AWS_REGION            = os.Getenv("AWS_REGION")
+	AWS_FROM              = os.Getenv("AWS_FROM")
+	AWS_TO                = os.Getenv("AWS_TO")
+	AWS_ACCESS_KEY_ID     = os.Getenv("AWS_ACCESS_KEY_ID")
+	AWS_SECRET_ACCESS_KEY = os.Getenv("AWS_SECRET_ACCESS_KEY")
+)
 
 func getMIMEEmail(from, to, subject, htmlBody string, attachmentPaths []string) (string, error) {
 	var emailBody bytes.Buffer
@@ -54,9 +63,18 @@ func getMIMEEmail(from, to, subject, htmlBody string, attachmentPaths []string) 
 
 func main() {
 	// Suponha que você já configurou sua sessão e cliente SES...
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(os.Getenv("SES_REGION")),
-	})
+	var sess *session.Session
+	var err error
+	if len(AWS_ACCESS_KEY_ID) > 0 && len(AWS_SECRET_ACCESS_KEY) > 0 {
+		sess, err = session.NewSession(&aws.Config{
+			Credentials: credentials.NewStaticCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, ""),
+			Region:      aws.String(AWS_REGION),
+		})
+	} else {
+		sess, err = session.NewSession(&aws.Config{
+			Region: aws.String(AWS_REGION),
+		})
+	}
 	if err != nil {
 		fmt.Println("Erro ao criar a sessão AWS:", err)
 		return
@@ -64,8 +82,8 @@ func main() {
 
 	svc := ses.New(sess)
 
-	from := os.Getenv("SES_EMAIL_FROM")
-	to := os.Getenv("SES_EMAIL_TO")
+	from := AWS_FROM
+	to := AWS_TO
 	subject := "Assunto do email TESTE TDC-V2"
 	htmlBody := "<h1>Email com Anexo</h1><p>Olá!</p>"
 	attachments := []string{"./desenho1.pdf", "./desenho2.pdf"}
