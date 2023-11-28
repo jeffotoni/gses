@@ -4,8 +4,10 @@ package v2
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -60,6 +62,15 @@ func (c *Client) getSession() (*ses.SES, error) {
 	var err error
 	if len(c.key) > 0 && len(c.secret) > 0 {
 		sess, err = session.NewSession(&aws.Config{
+			HTTPClient: &http.Client{
+				Transport: &http.Transport{
+					DisableKeepAlives: true,
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
+			},
+			DisableSSL:  aws.Bool(true),
 			Credentials: credentials.NewStaticCredentials(c.key, c.secret, ""),
 			Region:      aws.String(c.region),
 		})

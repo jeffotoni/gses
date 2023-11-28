@@ -88,32 +88,8 @@ func (this *SesEmail) SetSetupProfile(name string, from string, replyTo []string
 	return true
 }
 
-func AwsSesSetProfile(
+func AwsSesSetProfile(Region string, IdentityArn string, From string, Info string) *profile {
 
-	//
-	// region aws ex: us-east-1
-	//
-	Region string,
-
-	//
-	// https://console.aws.amazon.com/ses
-	// Identity ARN: arn:aws:ses:region-aws:xxxx:identity/yourmail@domain.com
-	//
-	IdentityArn string,
-
-	//
-	// Mail that it will send, it has to be configured on your SES
-	//
-	From string,
-
-	//
-	// Message that will be displayed in from ex: "text info here <emailfrom@domain.com>"
-	//
-	Info string) *profile {
-
-	//
-	// Identity ARN: arn:aws:ses:region-aws:xxxx:identity/yourmail@domain.com
-	//
 	IdentityARN := fmts.Concat("arn:aws:ses:", Region, ":", IdentityArn, ":identity/", From)
 
 	//
