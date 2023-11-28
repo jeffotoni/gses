@@ -4,27 +4,19 @@ package v2
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ses"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	ses "github.com/aws/aws-sdk-go-v2/service/sesv2"
+	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
+	"github.com/pkg/errors"
 )
 
-var HttpClient = &http.Client{
-	Transport: &http.Transport{
-		DisableKeepAlives: true,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	},
-}
-
 type Client struct {
-	// ses    *ses.Client
+	ses    *ses.Client
 	region string
 	key    string
 	secret string
@@ -32,7 +24,7 @@ type Client struct {
 
 func NewClient(region, key, secret string) *Client {
 	return &Client{
-		// ses:    &ses.Client{},
+		ses:    &ses.Client{},
 		region: region,
 		key:    key,
 		secret: secret,
@@ -44,10 +36,10 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 		return err
 	}
 
-	destination := ses.Destination{
-		ToAddresses:  parseStringArray(data.ToAddresses),
-		BccAddresses: parseStringArray(data.BccAddresses),
-		CcAddresses:  parseStringArray(data.CcAddresses),
+	destination := types.Destination{
+		ToAddresses:  data.ToAddresses,
+		BccAddresses: data.BccAddresses,
+		CcAddresses:  data.CcAddresses,
 	}
 
 	var emailBody bytes.Buffer
@@ -81,45 +73,32 @@ func (c *Client) Send(ctx context.Context, data DataEmail) error {
 
 	emailBody.WriteString("----_GoBoundary--\n")
 
-	d := string(emailBody.Bytes())
 	params := &ses.SendEmailInput{
-		Source:      &data.From,
 		Destination: &destination,
-		Message: &ses.Message{
-			Body:    &ses.Body{Text: &ses.Content{Data: &d}},
-			Subject: &ses.Content{Data: &data.FromMsg},
+		Content: &types.EmailContent{
+			Raw: &types.RawMessage{Data: emailBody.Bytes()},
 		},
+
+		// Source:           pf.From,
+		// ReplyToAddresses: pf.ReplyTo,
+		// ReturnPath:       pf.ReturnPath,
+		// ReturnPathArn:    pf.ReturnPathArn,
+		// SourceArn:        pf.SourceArn,
 	}
 
-	// svc := ses.NewFromConfig(aws.Config{
-	// Credentials: credentials.NewStaticCredentialsProvider(
-	// 	c.key,
-	// 	c.secret,
-	// 	"",
-	// ),
-	// 	Credentials: credentia,
-	// 	HTTPClient: HttpClient,
-	// 	Region:     c.region,
-	// })
-	sess, err := session.NewSessionWithOptions(session.Options{})
-	if err != nil {
-		return err
-	}
-
-	svc := ses.New(sess)
+	svc := ses.NewFromConfig(aws.Config{
+		Credentials: credentials.NewStaticCredentialsProvider(
+			c.key,
+			c.secret,
+			"",
+		),
+		Region: c.region,
+	})
 	if svc == nil {
-		return ErrNilSVC
+		return errors.New("svc is nil")
 
 	}
 
-	_, err = svc.SendEmail(params)
+	_, err := svc.SendEmail(ctx, params)
 	return err
-}
-
-func parseStringArray(s []string) []*string {
-	var a []*string
-	for _, v := range s {
-		a = append(a, &v)
-	}
-	return a
 }
